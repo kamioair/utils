@@ -2,6 +2,7 @@ package qconvert
 
 import (
 	"github.com/araddon/dateparse"
+	"github.com/kamioair/utils/qtime"
 	"strings"
 	"time"
 )
@@ -33,6 +34,32 @@ func (c convertTime) ToString(value time.Time, formatStr string) string {
 func (c convertTime) ToTime(timeStr string) (time.Time, error) {
 	timeStr = strings.Trim(timeStr, "\"")
 	return dateparse.ParseLocal(timeStr)
+}
+
+// ToDate
+//
+//	@Description: 字符串转化为日期对象
+//	@param valueStr 时间字符串
+//	@return qtime.Date
+func (c convertTime) ToDate(timeStr string) (qtime.Date, error) {
+	t, err := c.ToTime(timeStr)
+	if err != nil {
+		return 0, err
+	}
+	return qtime.NewDate(t), nil
+}
+
+// ToDateTime
+//
+//	@Description: 字符串转化为日期对象
+//	@param valueStr 时间字符串
+//	@return qtime.DateTime
+func (c convertTime) ToDateTime(timeStr string) (qtime.DateTime, error) {
+	t, err := c.ToTime(timeStr)
+	if err != nil {
+		return 0, err
+	}
+	return qtime.NewDateTime(t), nil
 }
 
 func (c convertTime) getLayout(formatStr string) string {
