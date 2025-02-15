@@ -2,7 +2,7 @@ package qtime
 
 import (
 	"fmt"
-	"github.com/kamioair/utils/qconvert"
+	"github.com/araddon/dateparse"
 	"strconv"
 	"strings"
 	"time"
@@ -184,7 +184,7 @@ func (d DateTime) AddSeconds(second int) Date {
 //
 //goland:noinspection GoMixedReceiverTypes
 func (d DateTime) ToString() string {
-	return qconvert.Time.ToString(d.ToTime(), dateTimeFormat)
+	return d.ToTime().Format(getLayout(dateTimeFormat))
 }
 
 // ToTime
@@ -226,7 +226,8 @@ func (d DateTime) MarshalJSON() ([]byte, error) {
 //	@param data
 //	@return error
 func (d *DateTime) UnmarshalJSON(data []byte) error {
-	v, err := qconvert.Time.ToTime(string(data))
+	timeStr := strings.Trim(string(data), "\"")
+	v, err := dateparse.ParseLocal(timeStr)
 	if err == nil {
 		s := fmt.Sprintf("%04d%02d%02d%02d%02d%02d", v.Year(), v.Month(), v.Day(), v.Hour(), v.Minute(), v.Second())
 		t, _ := strconv.ParseUint(s, 10, 64)

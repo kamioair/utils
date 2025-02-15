@@ -2,7 +2,7 @@ package qtime
 
 import (
 	"fmt"
-	"github.com/kamioair/utils/qconvert"
+	"github.com/araddon/dateparse"
 	"strconv"
 	"strings"
 	"time"
@@ -165,7 +165,7 @@ func (d Date) ToTime() time.Time {
 //
 //goland:noinspection GoMixedReceiverTypes
 func (d Date) ToString() string {
-	return qconvert.Time.ToString(d.ToTime(), "yyyy-MM-dd")
+	return d.ToTime().Format(getLayout(dateFormat))
 }
 
 // MarshalJSON
@@ -188,11 +188,74 @@ func (d Date) MarshalJSON() ([]byte, error) {
 //
 //goland:noinspection GoMixedReceiverTypes
 func (d *Date) UnmarshalJSON(data []byte) error {
-	v, err := qconvert.Time.ToTime(string(data))
+	timeStr := strings.Trim(string(data), "\"")
+	v, err := dateparse.ParseLocal(timeStr)
 	if err == nil {
 		s := fmt.Sprintf("%04d%02d%02d", v.Year(), v.Month(), v.Day())
 		t, _ := strconv.ParseUint(s, 10, 64)
 		*d = Date(t)
 	}
 	return err
+}
+
+func getLayout(formatStr string) string {
+	//"2006-01-02 15:04:05"
+	if strings.Contains(formatStr, "yyyy") {
+		formatStr = strings.Replace(formatStr, "yyyy", "2006", 1)
+	}
+	if strings.Contains(formatStr, "yy") {
+		formatStr = strings.Replace(formatStr, "yy", "06", 1)
+	}
+	if strings.Contains(formatStr, "YYYY") {
+		formatStr = strings.Replace(formatStr, "YYYY", "2006", 1)
+	}
+	if strings.Contains(formatStr, "YY") {
+		formatStr = strings.Replace(formatStr, "YY", "06", 1)
+	}
+	if strings.Contains(formatStr, "MM") {
+		formatStr = strings.Replace(formatStr, "MM", "01", 1)
+	}
+	if strings.Contains(formatStr, "M") {
+		formatStr = strings.Replace(formatStr, "M", "1", 1)
+	}
+	if strings.Contains(formatStr, "DD") {
+		formatStr = strings.Replace(formatStr, "DD", "02", 1)
+	}
+	if strings.Contains(formatStr, "D") {
+		formatStr = strings.Replace(formatStr, "D", "2", 1)
+	}
+	if strings.Contains(formatStr, "dd") {
+		formatStr = strings.Replace(formatStr, "dd", "02", 1)
+	}
+	if strings.Contains(formatStr, "d") {
+		formatStr = strings.Replace(formatStr, "d", "2", 1)
+	}
+	if strings.Contains(formatStr, "HH") {
+		formatStr = strings.Replace(formatStr, "HH", "15", 1)
+	}
+	if strings.Contains(formatStr, "H") {
+		formatStr = strings.Replace(formatStr, "H", "15", 1)
+	}
+	if strings.Contains(formatStr, "hh") {
+		formatStr = strings.Replace(formatStr, "hh", "15", 1)
+	}
+	if strings.Contains(formatStr, "h") {
+		formatStr = strings.Replace(formatStr, "h", "15", 1)
+	}
+	if strings.Contains(formatStr, "mm") {
+		formatStr = strings.Replace(formatStr, "mm", "04", 1)
+	}
+	if strings.Contains(formatStr, "m") {
+		formatStr = strings.Replace(formatStr, "m", "4", 1)
+	}
+	if strings.Contains(formatStr, "ss") {
+		formatStr = strings.Replace(formatStr, "ss", "05", 1)
+	}
+	if strings.Contains(formatStr, "s") {
+		formatStr = strings.Replace(formatStr, "s", "5", 1)
+	}
+	if strings.Contains(formatStr, "fff") {
+		formatStr = strings.Replace(formatStr, "fff", "000", 1)
+	}
+	return formatStr
 }
