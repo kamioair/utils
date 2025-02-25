@@ -36,20 +36,30 @@ func NewDate(t time.Time) Date {
 //	@return int YYYY年+WW周，如 202451
 //
 //goland:noinspection GoMixedReceiverTypes
-func (d Date) ForTo(endDate Date, interval uint, callback func(curr Date)) {
+func (d Date) ForTo(endDate Date, interval uint, callback func(curr Date, percent int)) {
 	start := d.ToTime()
 	end := endDate.ToTime()
-
+	// 计算总天数
+	totalDays := int(end.Sub(start).Hours() / 24)
+	if totalDays < 0 {
+		totalDays = -totalDays
+	}
 	// 判断正序或逆序
 	if start.Before(end) || start.Equal(end) {
 		// 正序遍历
 		for current := start; !current.After(end); current = current.AddDate(0, 0, int(interval)) {
-			callback(NewDate(current))
+			// 计算当前百分比
+			elapsedDays := int(current.Sub(start).Hours() / 24)
+			percent := int((float64(elapsedDays) / float64(totalDays)) * 100)
+			callback(NewDate(current), percent)
 		}
 	} else {
 		// 逆序遍历
 		for current := start; !current.Before(end); current = current.AddDate(0, 0, -int(interval)) {
-			callback(NewDate(current))
+			// 计算当前百分比
+			elapsedDays := int(start.Sub(current).Hours() / 24)
+			percent := int((float64(elapsedDays) / float64(totalDays)) * 100)
+			callback(NewDate(current), percent)
 		}
 	}
 }
