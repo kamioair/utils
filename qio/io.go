@@ -91,7 +91,22 @@ func GetDirectory(path string) string {
 //	@return []string
 //	@return error
 func GetFiles(path string) ([]string, error) {
-	return GetFilesByPattern(path, "*")
+	return GetFilesByPattern(path, "*.*")
+}
+
+// GetFilesByPattern
+//
+//	@Description: 获取指定目录下面的指定后缀名的所有文件
+//	@param path 例如：./xxx
+//	@param pattern 例如 *.* 或者 *.txt
+//	@return []string
+//	@return error
+func GetFilesByPattern(path string, pattern string) ([]string, error) {
+	files, err := filepath.Glob(filepath.Join(path, pattern))
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
 }
 
 // GetFolders
@@ -113,33 +128,6 @@ func GetFolders(path string) ([]string, error) {
 		}
 	}
 	return dirs, nil
-}
-
-// GetFilesByPattern
-//
-//	@Description: 获取指定目录下面的所有文件
-//	@param path
-//	@param searchPattern
-//	@return []string
-//	@return error
-func GetFilesByPattern(path string, searchPattern string) ([]string, error) {
-	var files []string
-
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		files = append(files, path)
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return files, nil
 }
 
 // GetFullPath
