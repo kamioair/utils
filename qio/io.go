@@ -102,7 +102,32 @@ func GetFiles(path string) ([]string, error) {
 //	@return []string
 //	@return error
 func GetFilesByPattern(path string, pattern string) ([]string, error) {
-	files, err := filepath.Glob(filepath.Join(path, pattern))
+	var files []string
+
+	// 使用Walk遍历目录及其子目录
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 跳过目录
+		if info.IsDir() {
+			return nil
+		}
+
+		// 检查文件是否匹配模式
+		matched, err := filepath.Match(strings.ToLower(pattern), strings.ToLower(filepath.Base(path)))
+		if err != nil {
+			return err
+		}
+
+		if matched {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
