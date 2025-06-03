@@ -2,7 +2,8 @@ package qlauncher
 
 import (
 	"fmt"
-	"github.com/kamioair/qf/utils/qio"
+	"github.com/kamioair/utils/qio"
+	"github.com/kamioair/utils/qos"
 	"github.com/kardianos/service"
 	"log"
 	"os"
@@ -37,24 +38,26 @@ var (
 )
 
 // Run 运行服务
-func Run(start func(), stop func()) {
+func Run(start func(), stop func(), singleton bool) {
+	// 单例运行
+	if singleton {
+		// 获取可执行文件的路径
+		execPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf("获取进程路径失败: %v\n", err)
+			return
+		}
+		// 判断进程是否启动
+		processName := qio.GetFileName(execPath)
+		if qos.GetProcessCount(processName) > 1 {
+			return
+		}
+	}
 	setup(start, nil, nil, stop)
-}
-
-// RunEx 运行服务
-func RunEx(start func(param interface{}), param interface{}, stop func()) {
-	setup(nil, start, param, stop)
 }
 
 // Exit 退出服务
 func Exit() {
-	//qio.WriteString(".\\log.txt", "Exit start", true)
-	//go func() {
-	//	time.Sleep(time.Millisecond * 100)
-	//	close(stopChan)
-	//	wg.Wait()
-	//	qio.WriteString(".\\log.txt", "Exit end", true)
-	//}()
 	time.Sleep(time.Millisecond * 100)
 	close(stopChan)
 	wg.Wait()
