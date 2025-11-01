@@ -290,3 +290,70 @@ func setModuleConfig(sectionName string, configObj interface{}) error {
 
 	return json.Unmarshal(js, configObj)
 }
+
+// SaveConfigOptions SaveConfig 保存配置到文件
+// filePath: 配置文件路径
+// configs: 配置映射，key为配置节名称，value为配置对象
+// opts: 保存选项，包含配置节描述和排除字段
+type SaveConfigOptions struct {
+	SectionDescs  map[string]string // 配置节描述映射，key为配置节名称，value为描述
+	ExcludeFields []string          // 需要排除的字段列表
+}
+
+func SaveConfig(filePath string, configs map[string]interface{}, opts *SaveConfigOptions) error {
+	// 生成Base配置内容
+	configBase := map[string]any{}
+	if baseConfig, exists := configs["Base"]; exists {
+		configBase["Base"] = baseConfig
+	}
+
+	// 初始值
+	if opts == nil {
+		opts = &SaveConfigOptions{}
+	}
+	if opts.ExcludeFields == nil {
+		opts.ExcludeFields = []string{"Config"}
+	}
+
+	newCfg := ""
+	if len(configBase) > 0 {
+		newCfg += "############################### Base Config ###############################\n"
+		newCfg += "# 通用基础配置\n"
+		newCfg += ToYAML(configBase, 0, opts.ExcludeFields)
+	}
+
+	// 生成模块配置内容
+	for sectionName, configObj := range configs {
+		if sectionName == "Base" {
+			continue // Base配置已经处理过了
+		}
+
+		configModule := map[string]any{}
+		configModule[sectionName] = configObj
+
+		// 获取配置节描述
+		desc := ""
+		if opts.SectionDescs != nil {
+			if descValue, exists := opts.SectionDescs[sectionName]; exists {
+				desc = descValue
+			}
+		}
+
+		mCfg := fmt.Sprintf("############################### %s Config ###############################\n", sectionName)
+		if desc != "" {
+			mCfg += fmt.Sprintf("# %s\n", desc)
+		}
+		mCfg += ToYAML(configModule, 0, opts.ExcludeFields)
+
+		if !strings.HasSuffix(mCfg, fmt.Sprintf("%s: \n", sectionName)) {
+			if newCfg != "" {
+				newCfg += "\n\n"
+			}
+			newCfg += mCfg
+		}
+	}
+
+	// 尝试检测是否有变化，如果有则更新文件
+	TrySave(filePath, newCfg)
+	return nil
+}
