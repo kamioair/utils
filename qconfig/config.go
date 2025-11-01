@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kamioair/utils/qio"
 	"reflect"
-	"regexp"
 	"strings"
 	"unicode"
 )
@@ -17,16 +16,16 @@ func TrySave(filePath string, newCfg string) {
 
 	// 创建一个新的切片来存储最终的配置块
 	var finalBlocks [][2]string
-	re := regexp.MustCompile(`\([^)]*\)`)
 
 	// 遍历 oldBlocks，确保顺序
 	for _, ob := range oldBlocks {
 		exist := false
 		// 检查 ob 是否在 newBlocks 中
 		for _, nb := range newBlocks {
-			obV := re.ReplaceAllString(ob[0], "")
-			nbV := re.ReplaceAllString(nb[0], "")
-			if obV == nbV {
+			// 提取配置块名称进行比较（去除" Config"后缀）
+			obName := strings.TrimSpace(strings.TrimSuffix(ob[0], " Config"))
+			nbName := strings.TrimSpace(strings.TrimSuffix(nb[0], " Config"))
+			if obName == nbName {
 				exist = true
 				// 如果存在，则使用 newBlocks 中的内容
 				finalBlocks = append(finalBlocks, nb)
@@ -90,7 +89,7 @@ func GetBlockValues(input string) [][2]string {
 			continue
 		}
 		if strings.HasPrefix(line, "###############################") && strings.HasSuffix(line, "###############################") {
-			configBlocks = append(configBlocks, [2]string{strings.Trim(lines[i+1], " "), ""})
+			configBlocks = append(configBlocks, [2]string{strings.Trim(lines[i], " "), ""})
 		}
 		if len(configBlocks) > 0 {
 			configBlocks[len(configBlocks)-1][1] += line + "\n"
