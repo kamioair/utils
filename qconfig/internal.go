@@ -76,6 +76,10 @@ func toYAMLStruct(value reflect.Value, indent int, excludeFields []string) strin
 		if len(field.Name) > 0 && unicode.IsLower(rune(field.Name[0])) {
 			continue
 		}
+		// 如果是继承qf的config，则跳过
+		if field.Name == "Config" && field.Type != nil && strings.HasSuffix(field.Type.PkgPath(), "qf") {
+			continue
+		}
 		// 如果字段在排除列表中，则跳过
 		if contains(excludeFields, field.Name) {
 			continue

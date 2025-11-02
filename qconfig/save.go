@@ -12,14 +12,17 @@ type SaveConfigOptions struct {
 	ExcludeFields []string          // 需要排除的字段列表
 }
 
+// 需要保存的内容
+var saveConfigs = map[string]any{}
+
 // SaveConfig 保存配置文件
 // filePath: 配置文件路径
 // configs: 配置映射，key为配置节名称，value为配置对象
-// opts: 保存选项，包含配置节描述和排除字段
-func SaveConfig(filePath string, configs map[string]interface{}, opts *SaveConfigOptions) error {
+// opts: 保存选项，包含配置节描述和排除字段（可为空）
+func SaveConfig(filePath string, opts *SaveConfigOptions) error {
 	// 生成Base配置内容
 	configBase := map[string]any{}
-	if baseConfig, exists := configs["Base"]; exists {
+	if baseConfig, exists := saveConfigs["Base"]; exists {
 		configBase["Base"] = baseConfig
 	}
 
@@ -28,7 +31,7 @@ func SaveConfig(filePath string, configs map[string]interface{}, opts *SaveConfi
 		opts = &SaveConfigOptions{}
 	}
 	if opts.ExcludeFields == nil {
-		opts.ExcludeFields = []string{"Config"}
+		opts.ExcludeFields = []string{}
 	}
 
 	newCfg := ""
@@ -39,7 +42,7 @@ func SaveConfig(filePath string, configs map[string]interface{}, opts *SaveConfi
 	}
 
 	// 生成模块配置内容
-	for sectionName, configObj := range configs {
+	for sectionName, configObj := range saveConfigs {
 		if sectionName == "Base" {
 			continue // Base配置已经处理过了
 		}

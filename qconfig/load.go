@@ -11,8 +11,9 @@ import (
 
 // LoadConfig 统一的配置加载方法
 // cfgFile: 配置文件路径
-// configs: 配置映射，key为配置节名称，value为配置对象
-func LoadConfig(cfgFile string, configs map[string]interface{}) error {
+// sectionName: 配置节名称
+// cfgObjPtr: 配置对象
+func LoadConfig(cfgFile string, sectionName string, cfgObjPtr any) error {
 	// 切换到配置文件所在目录
 	configDir := ""
 	if lastSlash := strings.LastIndex(cfgFile, "/"); lastSlash != -1 {
@@ -44,11 +45,12 @@ func LoadConfig(cfgFile string, configs map[string]interface{}) error {
 	}
 
 	// 从文件中读取配置到对应的对象
-	for sectionName, configObj := range configs {
-		if err := setModuleConfig(sectionName, configObj); err != nil {
-			return fmt.Errorf("加载配置节 %s 失败: %v", sectionName, err)
-		}
+	if err := setModuleConfig(sectionName, cfgObjPtr); err != nil {
+		return fmt.Errorf("加载配置节 %s 失败: %v", sectionName, err)
 	}
+
+	// 提交到需要保存的列表
+	saveConfigs[sectionName] = cfgObjPtr
 
 	return nil
 }
