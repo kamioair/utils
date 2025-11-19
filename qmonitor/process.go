@@ -1,4 +1,4 @@
-package qos
+package qmonitor
 
 import (
 	"github.com/mitchellh/go-ps"

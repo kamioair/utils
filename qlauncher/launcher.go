@@ -3,7 +3,7 @@ package qlauncher
 import (
 	"fmt"
 	"github.com/kamioair/utils/qio"
-	"github.com/kamioair/utils/qos"
+	"github.com/kamioair/utils/qmonitor"
 	"github.com/kardianos/service"
 	"log"
 	"os"
@@ -49,7 +49,7 @@ func Run(start func(), stop func(), singleton bool) {
 		}
 		// 判断进程是否启动
 		processName := qio.GetFileName(execPath)
-		if qos.GetProcessCount(processName) > 1 {
+		if qmonitor.GetProcessCount(processName) > 1 {
 			return
 		}
 	}
