@@ -151,6 +151,7 @@ func toYAMLSlice(value reflect.Value, indent int, excludeFields []string) string
 		for i := 0; i < value.Len(); i++ {
 			str1 := fmt.Sprintf("%s- ", strings.Repeat("  ", indent))
 			str2 := toYAMLValue(value.Index(i), indent+1, excludeFields)
+			str2 = strings.TrimSpace(str2)
 			builder.WriteString(str1)
 			builder.WriteString(str2)
 			if i < value.Len()-1 {
