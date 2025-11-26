@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -34,14 +33,11 @@ func PathExists(path string) bool {
 //	@return string
 //	@return error
 func GetCurrentFilePath() (string, error) {
-	if runtime.GOOS == "windows" {
-		file, err := exec.LookPath(os.Args[0])
-		if err != nil {
-			return "", err
-		}
-		return filepath.Abs(file)
+	exePath, err := os.Executable()
+	if err != nil {
+		return "", err
 	}
-	return filepath.Abs(os.Args[0])
+	return exePath, nil
 }
 
 // GetCurrentDirectory
