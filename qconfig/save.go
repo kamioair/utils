@@ -6,63 +6,47 @@ import (
 	"strings"
 )
 
-// SaveConfigOptions 保存配置到文件
-type SaveConfigOptions struct {
-	SectionDescs  map[string]string // 配置节描述映射，key为配置节名称，value为描述
-	ExcludeFields []string          // 需要排除的字段列表
-}
-
-// 需要保存的内容
-var saveConfigs = map[string]any{}
-
 // SaveConfig 保存配置文件
 // filePath: 配置文件路径
-// configs: 配置映射，key为配置节名称，value为配置对象
-// opts: 保存选项，包含配置节描述和排除字段（可为空）
-func SaveConfig(filePath string, opts *SaveConfigOptions) error {
+// saveConfigs: 配置映射，key为配置节名称，如Base，模块名称等；value为配置内容
+func SaveConfig(filePath string, saveContent SaveContent) error {
 	// 生成Base配置内容
-	configBase := map[string]any{}
-	if baseConfig, exists := saveConfigs["Base"]; exists {
+	configBase := map[string]saveData{}
+	if baseConfig, exists := saveContent.get("Base"); exists {
 		configBase["Base"] = baseConfig
 	}
 
-	// 初始值
-	if opts == nil {
-		opts = &SaveConfigOptions{}
-	}
-	if opts.ExcludeFields == nil {
-		opts.ExcludeFields = []string{}
-	}
-
+	// 先生成Base配置
 	newCfg := ""
 	if len(configBase) > 0 {
+		configModule := map[string]any{}
+		configModule["Base"] = configBase["Base"].Content
+
 		newCfg += "############################### Base Config ###############################\n"
-		newCfg += "# 通用基础配置\n"
-		newCfg += toYAML(configBase, 0, opts.ExcludeFields)
+		if configBase["Base"].Desc != "" {
+			newCfg += fmt.Sprintf("# %s\n", configBase["Base"].Desc)
+		}
+		newCfg += toYAML(configModule, 0, configBase["Base"].ExcludeFields)
 	}
 
 	// 生成模块配置内容
-	for sectionName, configObj := range saveConfigs {
+	for _, sectionName := range saveContent.allKeys() {
 		if sectionName == "Base" {
 			continue // Base配置已经处理过了
 		}
 
+		configObj, _ := saveContent.get(sectionName)
 		configModule := map[string]any{}
-		configModule[sectionName] = configObj
+		configModule[sectionName] = configObj.Content
 
 		// 获取配置节描述
-		desc := ""
-		if opts.SectionDescs != nil {
-			if descValue, exists := opts.SectionDescs[sectionName]; exists {
-				desc = descValue
-			}
-		}
+		desc := configObj.Desc
 
 		mCfg := fmt.Sprintf("############################### %s Config ###############################\n", sectionName)
 		if desc != "" {
 			mCfg += fmt.Sprintf("# %s\n", desc)
 		}
-		mCfg += toYAML(configModule, 0, opts.ExcludeFields)
+		mCfg += toYAML(configModule, 0, configObj.ExcludeFields)
 
 		if !strings.HasSuffix(mCfg, fmt.Sprintf("%s: \n", sectionName)) {
 			if newCfg != "" {
@@ -75,6 +59,54 @@ func SaveConfig(filePath string, opts *SaveConfigOptions) error {
 	// 尝试检测是否有变化，如果有则更新文件
 	trySave(filePath, newCfg)
 	return nil
+}
+
+// SaveContent 配置内容
+type SaveContent struct {
+	content map[string]saveData
+}
+
+type saveData struct {
+	Content       any
+	Desc          string   // 配置的描述，可为空
+	ExcludeFields []string // 需要排除不生成到文件的字段列表，可为空
+}
+
+// Add 添加配置
+func (sc *SaveContent) Add(sectionName string, sectionDesc string, content any) {
+	sc.AddWithExclude(sectionName, sectionDesc, content, nil)
+}
+
+// AddWithExclude 添加配置，并指定需要排除的字段
+func (sc *SaveContent) AddWithExclude(sectionName string, sectionDesc string, content any, excludeFields []string) {
+	if sc.content == nil {
+		sc.content = map[string]saveData{}
+	}
+	sc.content[sectionName] = struct {
+		Content       any
+		Desc          string
+		ExcludeFields []string
+	}{
+		Content:       content,
+		Desc:          sectionDesc,
+		ExcludeFields: excludeFields,
+	}
+}
+
+func (sc *SaveContent) get(sectionName string) (saveData, bool) {
+	if sc.content == nil {
+		return saveData{}, false
+	}
+	ctx, exist := sc.content[sectionName]
+	return ctx, exist
+}
+
+func (sc *SaveContent) allKeys() []string {
+	var keys []string
+	for k := range sc.content {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 // trySave 尝试保存配置文件，如果配置有变化则更新文件

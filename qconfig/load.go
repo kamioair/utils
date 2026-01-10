@@ -49,9 +49,6 @@ func LoadConfig(cfgFile string, sectionName string, cfgObjPtr any) error {
 		return fmt.Errorf("加载配置节 %s 失败: %v", sectionName, err)
 	}
 
-	// 提交到需要保存的列表
-	saveConfigs[sectionName] = cfgObjPtr
-
 	return nil
 }
 

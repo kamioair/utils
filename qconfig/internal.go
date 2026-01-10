@@ -39,6 +39,9 @@ func contains(list []string, target string) bool {
 
 // toYAML 将任意对象转换为YAML格式字符串
 func toYAML(v any, indent int, excludeFields []string) string {
+	if excludeFields == nil {
+		excludeFields = []string{}
+	}
 	value := reflect.ValueOf(v)
 	return toYAMLValue(value, indent, excludeFields)
 }
@@ -126,7 +129,14 @@ func toYAMLMap(value reflect.Value, indent int, excludeFields []string) string {
 		str2 := toYAMLValue(mapValue, indent+1, excludeFields)
 		builder.WriteString(str1)
 		if str2 != "[]" {
-			switch mapValue.Kind() {
+			var kind reflect.Kind
+			tp := reflect.TypeOf(mapValue.Interface())
+			if tp.Kind() == reflect.Ptr {
+				kind = tp.Elem().Kind()
+			} else {
+				kind = tp.Kind()
+			}
+			switch kind {
 			case reflect.Struct, reflect.Map, reflect.Slice, reflect.Array, reflect.Ptr, reflect.Interface:
 				builder.WriteString("\n")
 			default:
