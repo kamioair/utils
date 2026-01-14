@@ -149,19 +149,7 @@ func trySave(filePath string, newCfg string) {
 			}
 		}
 		if !exist {
-			if strings.HasPrefix(nb[1], "#") &&
-				strings.Contains(nb[1], "DB Config") {
-				tlist := make([][2]string, 0)
-				for i := 0; i < len(finalBlocks); i++ {
-					if i == 1 {
-						tlist = append(tlist, nb)
-					}
-					tlist = append(tlist, finalBlocks[i])
-				}
-				finalBlocks = tlist
-			} else {
-				finalBlocks = append(finalBlocks, nb)
-			}
+			finalBlocks = append(finalBlocks, nb)
 		}
 	}
 
