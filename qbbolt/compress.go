@@ -1,11 +1,11 @@
-package bboltstore
+package qbbolt
 
 import (
-	"bytes"     // 字节缓冲（避免每次 Compress 分配）
+	"bytes"         // 字节缓冲（避免每次 Compress 分配）
 	"compress/gzip" // 标准库 gzip
-	"fmt"       // 错误格式化
-	"io"        // gzip 解压时读全部
-	"sync"      // gzip 单线程安全保护
+	"fmt"           // 错误格式化
+	"io"            // gzip 解压时读全部
+	"sync"          // gzip 单线程安全保护
 
 	"github.com/klauspost/compress/zstd" // 纯 Go 的 zstd 实现
 )

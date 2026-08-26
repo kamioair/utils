@@ -1,4 +1,4 @@
-// Package bboltstore 封装 bbolt，提供按时间分文件的 KV 存储。
+// Package qbbolt 封装 bbolt，提供按时间分文件的 KV 存储。
 //
 // 这是标准库：其他模块可以直接 import 使用。
 //
@@ -8,20 +8,20 @@
 //   - 按天存储时 key 剥除日期前缀
 //   - "current 句柄" 优化：写命中时复用
 //   - **健壮性**：文件损坏/丢失时自愈（IVD 场景）
-//     * Get：文件损坏/丢失/读失败 → 返回明确错误，不崩溃
-//     * Put：文件损坏/丢失 → log + 自动删旧建新 + 重试，不返回错误
-//     * 可选 ErrorHandler：外部订阅事件（自愈、损坏、错误）用于审计
-package bboltstore
+//   - Get：文件损坏/丢失/读失败 → 返回明确错误，不崩溃
+//   - Put：文件损坏/丢失 → log + 自动删旧建新 + 重试，不返回错误
+//   - 可选 ErrorHandler：外部订阅事件（自愈、损坏、错误）用于审计
+package qbbolt
 
 import (
-	"errors"         // 错误类型
-	"fmt"            // 错误格式化
-	"io/fs"          // fs.ErrNotExist
-	"log"            // 自愈等关键事件记录
-	"os"             // 文件操作
-	"path/filepath"  // 路径拼接
-	"sync"           // current 句柄互斥
-	"time"           // 时间戳
+	"errors"        // 错误类型
+	"fmt"           // 错误格式化
+	"io/fs"         // fs.ErrNotExist
+	"log"           // 自愈等关键事件记录
+	"os"            // 文件操作
+	"path/filepath" // 路径拼接
+	"sync"          // current 句柄互斥
+	"time"          // 时间戳
 
 	bolt "go.etcd.io/bbolt"
 )
