@@ -5,9 +5,11 @@ go 1.20
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/kardianos/service v1.2.2
+	github.com/klauspost/compress v1.17.2
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/spf13/viper v1.19.0
+	go.etcd.io/bbolt v1.3.10
 )
 
 require (
