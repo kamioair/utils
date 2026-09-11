@@ -27,6 +27,14 @@ func NewDate(t time.Time) Date {
 	return Date(v)
 }
 
+// Today
+//
+//	@Description: 当前日期
+//	@return Date
+func Today() Date {
+	return NewDate(time.Now())
+}
+
 // ForTo
 //
 //	@Description: 自动循环遍历日期，并按日返回每天日期

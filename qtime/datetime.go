@@ -19,12 +19,20 @@ type DateTime uint64
 //
 //	@Description: 创建日期+时间
 //	@param t 时间
-//	@return Date
+//	@return DateTime
 func NewDateTime(t time.Time) DateTime {
 	t = t.Local()
 	s := fmt.Sprintf("%04d%02d%02d%02d%02d%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 	v, _ := strconv.ParseUint(s, 10, 64)
 	return DateTime(v)
+}
+
+// Now
+//
+//	@Description: 当前时间，精确到秒
+//	@return DateTime
+func Now() DateTime {
+	return NewDateTime(time.Now())
 }
 
 // ForTo
