@@ -41,14 +41,15 @@ type inFlightCall[T any] struct {
 // NewCaches 创建缓存。
 //
 //	@param defaultExpiration 缓存项的默认过期时间。0 表示永不过期，非 0 表示具体过期时长(例如 30 * time.Second)。
-//	@param cleanupInterval   清理过期缓存项的时间间隔。0 表示不清理，非 0 表示按该间隔清理(例如 30 * time.Second)。
+//	@param cleanupInterval   清理过期缓存项的时间间隔。0 表示不清理，非 0 表示按该间隔清理(例如 15 * time.Second)。 注：清理时间建议不要大于过去时间
 //	@return *Caches[T]
 func NewCaches[T any](defaultExpiration, cleanupInterval time.Duration) *Caches[T] {
-	return &Caches[T]{
+	c := &Caches[T]{
 		caches:      cache.New(defaultExpiration, cleanupInterval),
 		inFlight:    make(map[string]*inFlightCall[T]),
 		waitTimeout: defaultWaitTimeout,
 	}
+	return c
 }
 
 // SetWaitTimeout 设置 singleflight 等待 callback 完成的超时时间。
@@ -64,15 +65,25 @@ func (c *Caches[T]) SetWaitTimeout(d time.Duration) {
 	c.mu.Unlock()
 }
 
-// SetFindingCallback 设置（或替换、清除）缓存未命中时的主动查找回调。
+// SetFindingCallback 设置（或替换、清除）缓存未命中时的主动触发回调。
 // 线程安全，可在并发运行期调用。
 //
-//	@param callback  缓存未命中时的主动查找回调；可为 nil（仅作纯缓存使用）。
+//	@param callback  缓存未命中时的主动触发回调
 //	                 注意：callback 内不应递归访问同一个 Caches 实例的相同 key，
 //	                      否则将进入等待-超时分支并返回 (zero, false)（详见 Get 文档）。
 func (c *Caches[T]) SetFindingCallback(callback func(key string) (T, bool)) {
 	c.mu.Lock()
 	c.findingCallback = callback
+	c.mu.Unlock()
+}
+
+// SetEvictedCallback 设置（或替换、清除）缓存失效后主动触发回调。
+// 线程安全，可在并发运行期调用。
+//
+//	@param callback  缓存失效后主动触发回调
+func (c *Caches[T]) SetEvictedCallback(callback func(string, interface{})) {
+	c.mu.Lock()
+	c.caches.OnEvicted(callback)
 	c.mu.Unlock()
 }
 
@@ -253,20 +264,22 @@ func (c *Caches[T]) ClearAll() {
 //  3. 逐条写入 data 中的 key/value，写入使用构造时设置的默认过期时间。
 //
 // 并发语义：
-//  - 同一时刻仅允许一个 Rebuild 执行：并发调用将被串行化，等待前一次完成。
-//    防止两个 Rebuild 交错产生既不属于 A 也不属于 B 的混合状态。
-//  - Rebuild 是"尽力权威"：在 Flush 与 Set 窗口内发生的并发 Set 会被 Rebuild 覆盖；
-//    但若 Rebuild 完成 Set 后才有并发 Set，则并发 Set 会反过来覆盖 Rebuild 的值
-//    （无跨所有写入的全局互斥，最后写入者胜出）。
-//  - 清空与写入不是原子操作，期间并发 Get 可能短暂看到空缓存或部分新数据。
-//  - 正在执行的 findingCallback 仍会执行完成，但其结果**不会回写到新缓存**（由版本号机制保证）。
-//    调用方此时会拿到 (zero, false)，应自行重试或 fallback。
+//   - 同一时刻仅允许一个 Rebuild 执行：并发调用将被串行化，等待前一次完成。
+//     防止两个 Rebuild 交错产生既不属于 A 也不属于 B 的混合状态。
+//   - Rebuild 是"尽力权威"：在 Flush 与 Set 窗口内发生的并发 Set 会被 Rebuild 覆盖；
+//     但若 Rebuild 完成 Set 后才有并发 Set，则并发 Set 会反过来覆盖 Rebuild 的值
+//     （无跨所有写入的全局互斥，最后写入者胜出）。
+//   - 清空与写入不是原子操作，期间并发 Get 可能短暂看到空缓存或部分新数据。
+//   - 正在执行的 findingCallback 仍会执行完成，但其结果**不会回写到新缓存**（由版本号机制保证）。
+//     调用方此时会拿到 (zero, false)，应自行重试或 fallback。
 //
 // 其他约束：
-//  - data 中空字符串 key 会被静默忽略（与 Set 行为一致）。
-//  - data 为 nil 或空 map 时，仅执行清空，等价于 ClearAll。
 //
-//	@param data 用于重建缓存的键值对集合
+//   - data 中空字符串 key 会被静默忽略（与 Set 行为一致）。
+//
+//   - data 为 nil 或空 map 时，仅执行清空，等价于 ClearAll。
+//
+//     @param data 用于重建缓存的键值对集合
 func (c *Caches[T]) Rebuild(data map[string]T) {
 	c.rebuildMu.Lock()
 	defer c.rebuildMu.Unlock()
